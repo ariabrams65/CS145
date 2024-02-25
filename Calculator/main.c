@@ -31,41 +31,72 @@ void set_EN(unsigned char en) {
 }
 
 void set_data_bits(unsigned char data) {
-	unsigned char bit0 = data & BIT_0;	
-	bit0 <<= 7;
-	GPIO_PORTA_DATA_R |= bit0;
+    // D0 = PA7
+    if((data & BIT_0) == BIT_0) {
+		GPIO_PORTA_DATA_R |= BIT_7;
+    } else {
+		GPIO_PORTA_DATA_R &= ~BIT_7;
+    }
 
-	unsigned char bit1 = data & BIT_1;	
-	bit1 <<= 6;
-	GPIO_PORTA_DATA_R |= bit1;
+    // D1 = PA6
+    if((data & BIT_1) == BIT_1) {
+		GPIO_PORTA_DATA_R |= BIT_6;
+    } else {
+		GPIO_PORTA_DATA_R &= ~BIT_6;
+    }
 
-	unsigned char bit2 = data & BIT_2;	
-	bit2 <<= 5;
-	GPIO_PORTA_DATA_R |= bit2;
+    // D2 = PA5
+    if((data & BIT_2) == BIT_2) {
+		GPIO_PORTA_DATA_R |= BIT_5;
+    } else {
+		GPIO_PORTA_DATA_R &= ~BIT_5;
+    }
 
-	unsigned char bit3 = data & BIT_3;	
-	bit3 <<= 4;
-	GPIO_PORTB_DATA_R |= bit3;
+    // D3 = PB4
+    if((data & BIT_3) == BIT_3) {
+		GPIO_PORTB_DATA_R |= BIT_4;
+    } else {
+		GPIO_PORTB_DATA_R &= ~BIT_4;
+    }
 
-	unsigned char bit4 = data & BIT_4;	
-	bit4 <<= 5;
-	GPIO_PORTE_DATA_R |= bit4;
+    // D4 = PE5
+    if((data & BIT_4) == BIT_4) {
+		GPIO_PORTE_DATA_R |= BIT_5;
+    } else {
+		GPIO_PORTE_DATA_R &= ~BIT_5;
+    }
 
-	unsigned char bit5 = data & BIT_5;	
-	bit5 <<= 4;
-	GPIO_PORTE_DATA_R |= bit5;
+    // D5 = PE4
+    if((data & BIT_5) == BIT_5) {
+		GPIO_PORTE_DATA_R |= BIT_4;
+    } else {
+		GPIO_PORTE_DATA_R &= ~BIT_4;
+    }
 
-	unsigned char bit6 = data & BIT_6;	
-	bit6 <<= 1;
-	GPIO_PORTB_DATA_R |= bit6;
+    // D6 = PB1
+    if((data & BIT_6) == BIT_6) {
+		GPIO_PORTB_DATA_R |= BIT_1;
+    } else {
+		GPIO_PORTB_DATA_R &= ~BIT_1;
+    }
 
-	unsigned char bit7 = data & BIT_7;	
-	bit7 <<= 0;
-	GPIO_PORTB_DATA_R |= bit7;
+    // D7 = PB0
+    if((data & BIT_7) == BIT_7) {
+		GPIO_PORTB_DATA_R |= BIT_0;
+    } else {
+		GPIO_PORTB_DATA_R &= ~BIT_0;
+    }
 }
 
 void delay() {
-	for (int i = 0; i < 5; ++i);
+	int i;
+	for (i = 0; i < 1000; ++i);
+}
+
+void wait_on_busy() {
+		GPIO_PORTB_DIR_R &= ~BIT_0;
+		while (GPIO_PORTB_DATA_R & BIT_0);
+		GPIO_PORTB_DIR_R |= BIT_0;
 }
 
 void write_LCD(unsigned char data, unsigned char rs) {
@@ -74,10 +105,15 @@ void write_LCD(unsigned char data, unsigned char rs) {
 	set_RW(0);
 	delay();
 	set_EN(1);
+	delay();
 	set_data_bits(data);
 	delay();
 	set_EN(0);
 	delay();
+}
+
+void turn_on_LED() {
+	GPIO_PORTF_DATA_R |= BIT_2;
 }
 
 void clear_display() {
@@ -96,25 +132,25 @@ void write_data(unsigned char data) {
 	write_LCD(data, 1);	
 }
 
-void wait_on_busy() {
-		GPIO_PORTB_DIR_R &= ~BIT_0;
-		while (GPIO_PORTB_DATA_R & BIT_0);
-		GPIO_PORTB_DIR_R |= BIT_0;
-}
 
 void init_LCD() {
 	//increment cursor and display shift off
 	write_instruction(0b00000110);	
-	
+
 	//display on, cursor off, blink off
 	write_instruction(0b00001100);
 	
+	//cursor and blink on
+	// write_instruction(0b00001111);
+	
 	//8-bit mode, 2 lines, 5x8 dots per character
 	write_instruction(0b00111000);
+
+	clear_display();
 }
 
 void init_ports() {
-	SYSCTL_RCGCGPIO_R |= BIT_0 | BIT_1 | BIT_3 | BIT_4;
+	SYSCTL_RCGCGPIO_R |= BIT_0 | BIT_1 | BIT_3 | BIT_4 | BIT_5;
 	
     GPIO_PORTA_DEN_R |= BIT_5 | BIT_6 | BIT_7;
     GPIO_PORTB_DEN_R |= BIT_0 | BIT_1 | BIT_4;
@@ -125,6 +161,9 @@ void init_ports() {
     GPIO_PORTB_DIR_R |= BIT_0 | BIT_1 | BIT_4;
     GPIO_PORTD_DIR_R |= BIT_0 | BIT_1 | BIT_2;
     GPIO_PORTE_DIR_R |= BIT_4 | BIT_5;
+	
+	GPIO_PORTF_DEN_R |= BIT_2;
+	GPIO_PORTF_DIR_R |= BIT_2;
 }
 
 int main(void)
@@ -132,5 +171,8 @@ int main(void)
 	init_ports();
 	init_LCD();
 	write_data('A');
+	
+	while (1);
+
 	return 0;
 }
