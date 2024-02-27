@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// balls
+
 char matrix[4][4] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
